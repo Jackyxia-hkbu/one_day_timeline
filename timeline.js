@@ -1,0 +1,7 @@
+(function(root){
+function parseDuration(value){const m=/^(?:(\d+)h)?(?:(\d+)min)?$/.exec(value.trim().toLowerCase().replace(/\s/g,''));if(!m||(!m[1]&&!m[2]))return null;const n=Number(m[1]||0)*60+Number(m[2]||0);return Number.isSafeInteger(n)&&n>=0&&n<1440?n:null}
+function parseTime(value){if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(value||''))return null;return Number(value.slice(0,2))*60+Number(value.slice(3))}
+function formatTime(n){if(n===null)return '';const t=((n%1440)+1440)%1440;return String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0')}
+function calculate(nodes,durations){const times=nodes.map(n=>parseTime(n.manualTime));const errors=[];let start=0;while(start<nodes.length){let end=start;while(end<nodes.length-1&&parseDuration(durations[end]||'')!==null)end++;const anchors=[];for(let i=start;i<=end;i++)if(times[i]!==null)anchors.push(i);if(anchors.length){const anchor=anchors[0];for(let i=anchor-1;i>=start;i--)times[i]=times[i+1]-parseDuration(durations[i]);for(let i=anchor+1;i<=end;i++){const expected=times[i-1]+parseDuration(durations[i-1]);if(parseTime(nodes[i].manualTime)!==null&&times[i]!==expected)errors.push(`第 ${i+1} 个节点的已知时间与前段耗时冲突`);else times[i]=expected}}start=end+1}return {times,errors}}
+const api={parseDuration,parseTime,formatTime,calculate};if(typeof module!=='undefined')module.exports=api;else root.Timeline=api;
+})(typeof globalThis!=='undefined'?globalThis:this);
